@@ -7,6 +7,8 @@ import { InvoicesTableSkeleton } from '@/app/ui/skeletons';
 import { Suspense } from 'react';
 import { fetchInvoicesPages } from '@/app/lib/data';
 
+// All pages recieves a searchParams prop
+// This page is rendered on the server
 export default async function Page({
   searchParams,
 }: {
