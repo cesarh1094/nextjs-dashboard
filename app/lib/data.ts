@@ -102,7 +102,7 @@ export async function fetchCardData() {
   }
 }
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 60;
 export async function fetchFilteredInvoices(
   query: string,
   currentPage: number,
@@ -110,6 +110,8 @@ export async function fetchFilteredInvoices(
   noStore();
 
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  console.log({ offset, query });
 
   try {
     const invoices = await sql<InvoicesTable>`
@@ -154,6 +156,8 @@ export async function fetchInvoicesPages(query: string) {
       invoices.date::text ILIKE ${`%${query}%`} OR
       invoices.status ILIKE ${`%${query}%`}
   `;
+
+    console.log({ count: count.rows[0].count });
 
     const totalPages = Math.ceil(Number(count.rows[0].count) / ITEMS_PER_PAGE);
     return totalPages;
