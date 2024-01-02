@@ -7,10 +7,17 @@ import { redirect } from 'next/navigation';
 
 const InvoiceSchema = z.object({
   id: z.string(),
-  customerId: z.string(),
+  customerId: z.string({
+    invalid_type_error: 'Please select a customer.',
+  }),
   // Coerce amount to string then covert dollars to cents
-  amount: z.coerce.number().transform((amount) => amount * 100),
-  status: z.enum(['pending', 'paid']),
+  amount: z.coerce
+    .number()
+    .gt(0, { message: 'Please enter an amount greater than $0.' })
+    .transform((amount) => amount * 100),
+  status: z.enum(['pending', 'paid'], {
+    invalid_type_error: 'Please select an invoice status.',
+  }),
   date: z.string(),
 });
 
@@ -18,17 +25,36 @@ const CreateInvoiceSchema = InvoiceSchema.omit({ id: true, date: true });
 
 type CreateInvoice = z.infer<typeof CreateInvoiceSchema>;
 type EmptyInvoice = CreateInvoice & { status: null };
+type CreateInvoiceKeys = keyof CreateInvoice;
 
-export async function createInvoice(formData: FormData) {
+export type InvoiceFormState = {
+  message?: string;
+  errors?: {
+    [key in CreateInvoiceKeys]?: Array<string>;
+  };
+};
+
+export async function createInvoice(
+  currentState: InvoiceFormState,
+  formData: FormData,
+): Promise<InvoiceFormState> {
   const rawInvoice = Object.fromEntries(formData.entries()) as {
     customerID: string;
     amount: string;
     status: string;
   };
 
+  const invoiceValidationResult = CreateInvoiceSchema.safeParse(rawInvoice);
+
+  if (!invoiceValidationResult.success) {
+    return {
+      errors: invoiceValidationResult.error.flatten().fieldErrors,
+      message: 'Failed to create invoice.',
+    };
+  }
+
   try {
-    const { customerId, amount, status } =
-      CreateInvoiceSchema.parse(rawInvoice);
+    const { customerId, amount, status } = invoiceValidationResult.data;
 
     const date = new Date().toISOString().split('T')[0];
 
@@ -46,21 +72,6 @@ export async function createInvoice(formData: FormData) {
 
   revalidatePath('/dashboard/invoices');
   redirect('/dashboard/invoices');
-
-  // try {
-
-  //   // return {
-  //   //   invoice: {
-  //   //     customerId: '',
-  //   //     amount: 0,
-  //   //     status: '',
-  //   //   },
-  //   // } as { invoice: EmptyInvoice };
-  // } catch (e) {
-  //   return {
-  //     invoice: rawInvoice,
-  //   };
-  // }
 }
 
 // Use Zod to update the expected types
