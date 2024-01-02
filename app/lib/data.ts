@@ -20,8 +20,6 @@ export async function fetchRevenue() {
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
 
-    console.log('Fetching revenue data...');
-
     const data = await sql<Revenue>`SELECT * FROM revenue`;
 
     return data.rows;
@@ -142,8 +140,6 @@ export async function fetchInvoicesPages(query: string) {
       invoices.date::text ILIKE ${`%${query}%`} OR
       invoices.status ILIKE ${`%${query}%`}
   `;
-
-    console.log({ count: count.rows[0].count });
 
     const totalPages = Math.ceil(Number(count.rows[0].count) / ITEMS_PER_PAGE);
     return totalPages;

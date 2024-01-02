@@ -4,6 +4,8 @@ import { custom, z } from 'zod';
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 
 const InvoiceSchema = z.object({
   id: z.string(),
@@ -116,10 +118,6 @@ export async function updateInvoice(
 }
 
 export async function deleteInvoice(id: string) {
-  throw new Error('Failed to Detete Invoice');
-
-  console.log('Invoice about to be deleted: ', { id });
-
   try {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
     revalidatePath('/dashboard/invoices');
@@ -133,5 +131,23 @@ export async function deleteInvoice(id: string) {
     return {
       message: 'Database Error: Failed to delete invoice.',
     };
+  }
+}
+
+export async function authenicateUser(
+  currentState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn('credentials', formData);
+  } catch (e) {
+    if (e instanceof AuthError) {
+      switch (e.type) {
+        case 'CredentialsSignin':
+          return 'Invalid credentials.';
+        default:
+          return 'Something went wrong. Please try again.';
+      }
+    }
   }
 }
