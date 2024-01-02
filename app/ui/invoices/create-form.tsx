@@ -156,7 +156,7 @@ export default function Form({ customers }: { customers: CustomerField[] }) {
           id="form-error"
           aria-live="polite"
           aria-atomic="true"
-          className="[&:not(:empty)]:mb-4"
+          className="[&:not(:empty)]:mt-4"
         >
           {state.message ? (
             <p className="text-sm text-red-500">{state.message}</p>

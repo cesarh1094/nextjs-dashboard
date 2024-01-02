@@ -77,14 +77,27 @@ export async function createInvoice(
 // Use Zod to update the expected types
 const UpdateInvoice = InvoiceSchema.omit({ id: true, date: true });
 
-export async function updateInvoice(id: string, formData: FormData) {
-  try {
-    const { customerId, amount, status } = UpdateInvoice.parse({
-      customerId: formData.get('customerId'),
-      amount: formData.get('amount'),
-      status: formData.get('status'),
-    });
+export async function updateInvoice(
+  id: string,
+  currentState: InvoiceFormState,
+  formData: FormData,
+): Promise<InvoiceFormState> {
+  const updateInvoiceValidationResult = UpdateInvoice.safeParse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
 
+  if (!updateInvoiceValidationResult.success) {
+    return {
+      errors: updateInvoiceValidationResult.error.flatten().fieldErrors,
+      message: 'Failed to update invoice.',
+    };
+  }
+
+  const { customerId, amount, status } = updateInvoiceValidationResult.data;
+
+  try {
     await sql`
     UPDATE invoices
     SET customer_id = ${customerId}, amount = ${amount}, status = ${status}
